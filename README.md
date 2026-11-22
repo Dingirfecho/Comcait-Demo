@@ -18,3 +18,10 @@ Supuestos a confirmar con el portal real: el orden exacto de columnas de la plan
 
 ## Publicar
 GitHub Pages: Settings → Pages → rama `main`, carpeta `/ (root)`.
+
+## Escenario n8n (registro individual)
+
+`docs/n8n/` contiene los tres scripts del flujo «REGISTRO INDIVIDUAL - robot»:
+`preparar-registro.js` (arma el registro desde la fila de códigos DT), `robot-individual.js`
+(robot de Browserless que completa las 4 etapas) y `anotar-registro.js` (junta el resultado).
+Requiere que el sitio esté publicado (GitHub Pages) y una credencial de Browserless.
