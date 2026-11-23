@@ -38,17 +38,28 @@ export default async ({ page, context }) => {
     await page.click('[data-testid=card-individual]'); pasos.push('registro individual');
 
     for (let n = 1; n <= 3; n++) {
-      await page.waitForFunction('location.hash === "#/ind/' + n + '"', { timeout: 10000 });
+      // Esperar a que la etapa esté dibujada (si el sitio volvió al menú, se vuelve a la etapa).
+      await page.waitForFunction('location.hash === "#/ind/' + n + '"', { timeout: 10000 }).catch(() => {});
+      if (!(await page.$('[data-testid=btn-next]'))) {
+        await page.evaluate((x) => { location.hash = '#/ind/' + x; }, n);
+        await page.waitForSelector('[data-testid=btn-next]', { timeout: 10000 });
+      }
       if (n === 3) {  // tantas filas de haberes como haya HABER_n
         let k = 1; for (let i = 1; i <= 5; i++) if (datos['HABER_' + i]) k = i;
-        for (let i = 1; i < k; i++) { await page.click('[data-testid=btn-add-haber]'); await espera(120); }
+        for (let i = 1; i < k; i++) { await page.click('[data-testid=btn-add-haber]'); await espera(150); }
       }
       await llenar(); pasos.push('etapa ' + n + ' completa');
-      await page.click('[data-testid=btn-next]'); await espera(350);
+      await page.click('[data-testid=btn-next]');
+      // Esperar el resultado: pasa a la etapa siguiente o aparecen errores.
+      await Promise.race([
+        page.waitForFunction('location.hash === "#/ind/' + (n + 1) + '"', { timeout: 10000 }),
+        page.waitForSelector('.errbox', { timeout: 10000 })
+      ]).catch(() => {});
+      await espera(300);
       const errs = await errores();
       if (errs.length) return await fallo('etapa ' + n, 'El formulario rechazó la etapa ' + n, { errores: errs });
     }
-    await page.waitForFunction('location.hash === "#/ind/4"', { timeout: 10000 });
+    await page.waitForSelector('[data-testid=btn-finalizar]', { timeout: 10000 });
     await llenar();
     await page.evaluate(() => { const c = document.querySelector('[data-field="DECLARACION_JURADA"]'); if (c && !c.checked) c.click(); });
     pasos.push('etapa 4 completa y declaración jurada');
