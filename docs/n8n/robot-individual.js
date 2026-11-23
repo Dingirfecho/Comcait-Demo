@@ -6,7 +6,7 @@ export default async ({ page, context }) => {
   const pasos = [];
   const datos = context.datos || {};
   const captura = async () => { try { return await page.screenshot({ encoding: 'base64', type: 'png', fullPage: true }); } catch (e) { return null; } };
-  const errores = () => page.$$eval('.errbox li', (els) => els.map((e) => e.textContent.trim()));
+  const errores = () => page.evaluate(() => Array.from(document.querySelectorAll('.errbox li')).map((e) => e.textContent.trim()));
   const fallo = async (paso, error, extra) => responder({ ok: false, paso, pasos, error, ...(extra || {}), captura: await captura() });
 
   // Escribe en la página los valores de "datos" en los campos [data-field]. Varias pasadas: algunos campos
