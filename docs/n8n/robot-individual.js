@@ -7,7 +7,14 @@ export default async ({ page, context }) => {
   const datos = context.datos || {};
   const captura = async () => { try { return await page.screenshot({ encoding: 'base64', type: 'png', fullPage: true }); } catch (e) { return null; } };
   const errores = () => page.evaluate(() => Array.from(document.querySelectorAll('.errbox li')).map((e) => e.textContent.trim()));
-  const fallo = async (paso, error, extra) => responder({ ok: false, paso, pasos, error, ...(extra || {}), captura: await captura() });
+  const consola = [];
+  page.on('pageerror', (e) => consola.push('JS: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error') consola.push('consola: ' + m.text()); });
+  const fallo = async (paso, error, extra) => {
+    let diag = '';
+    try { diag = ' [dirección: ' + (await page.evaluate(() => location.hash)) + (consola.length ? '; ' + consola.slice(0, 3).join(' | ') : '') + ']'; } catch (e) { /* sin diagnóstico */ }
+    return responder({ ok: false, paso, pasos, error: error + diag, ...(extra || {}), captura: await captura() });
+  };
 
   // Escribe en la página los valores de "datos" en los campos [data-field]. Varias pasadas: algunos campos
   // (régimen especial, tipo de jornada, tipo de contrato...) hacen aparecer otros al cambiar.
